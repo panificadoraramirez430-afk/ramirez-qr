@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>Ramírez · Consulta de Producto</title>
+  <style>
+    /* ── Reset y base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --primary:      #d97706;
+      --primary-dark: #b45309;
+      --primary-light:#fef3c7;
+      --accent:       #f59e0b;
+      --bg:           #fffbf0;
+      --surface:      #ffffff;
+      --text:         #1c1917;
+      --muted:        #78716c;
+      --line:         #e7e5e4;
+      --success:      #16a34a;
+      --danger:       #dc2626;
+      --warning:      #d97706;
+      --shadow-sm:    0 1px 3px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.06);
+      --shadow:       0 10px 40px rgba(0,0,0,.12);
+      --shadow-lg:    0 24px 64px rgba(0,0,0,.18);
+      --radius:       20px;
+    }
+
+    html, body {
+      height: 100%;
+      font-family: 'Segoe UI', system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+    }
+
+    /* ── Fondo decorativo ── */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -10%, rgba(245,158,11,.18), transparent),
+        radial-gradient(ellipse 60% 40% at 100% 100%, rgba(217,119,6,.12), transparent);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Contenedor principal ── */
+    .page {
+      position: relative;
+      z-index: 1;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 16px 40px;
+    }
+
+    /* ── Header de marca ── */
+    .brand-header {
+      width: 100%;
+      max-width: 440px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      padding: 20px 0 16px;
+    }
+    .brand-logo {
+      width: 44px;
+      height: 44px;
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 22px;
+      box-shadow: var(--shadow-sm);
+      flex-shrink: 0;
+    }
+    .brand-text strong {
+      display: block;
+      font-size: 15px;
+      font-weight: 800;
+      color: var(--primary-dark);
+      letter-spacing: -.3px;
+    }
+    .brand-text span {
+      display: block;
+      font-size: 11px;
+      color: var(--muted);
+      margin-top: 1px;
+    }
+    .brand-badge {
+      margin-left: auto;
+      background: var(--primary-light);
+      border: 1px solid rgba(217,119,6,.3);
+      color: var(--primary-dark);
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    /* ── Tarjeta de búsqueda (solo visible cuando no hay scan en URL) ── */
+    .search-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 16px;
+    }
+    .search-card h2 {
+      font-size: 14px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      margin-bottom: 12px;
+    }
+    .search-row {
+      display: flex;
+      gap: 8px;
+    }
+    .search-input {
+      flex: 1;
+      border: 1.5px solid var(--line);
+      border-radius: 14px;
+      padding: 12px 14px;
+      font-size: 14px;
+      outline: none;
+      color: var(--text);
+      background: #fafaf9;
+      transition: border-color .18s;
+    }
+    .search-input:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 3px rgba(217,119,6,.15);
+    }
+    .search-btn {
+      background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+      color: white;
+      border: none;
+      border-radius: 14px;
+      padding: 12px 18px;
+      font-size: 14px;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .15s, filter .15s;
+      white-space: nowrap;
+    }
+    .search-btn:hover { transform: translateY(-1px); filter: brightness(1.05); }
+    .search-btn:active { transform: translateY(0); }
+
+    /* ── TARJETA DE PRODUCTO ── */
+    .product-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow-lg);
+      overflow: hidden;
+      animation: cardIn .35s cubic-bezier(.22,1,.36,1) both;
+    }
+    @keyframes cardIn {
+      from { opacity: 0; transform: translateY(20px) scale(.97); }
+      to   { opacity: 1; transform: translateY(0)  scale(1); }
+    }
+
+    /* Cabecera con degradado */
+    .card-top {
+      background: linear-gradient(140deg, var(--primary-dark) 0%, var(--primary) 60%, var(--accent) 100%);
+      padding: 24px 22px 20px;
+      position: relative;
+      overflow: hidden;
+    }
+    .card-top::after {
+      content: '🍞';
+      position: absolute;
+      right: -10px;
+      bottom: -14px;
+      font-size: 90px;
+      opacity: .10;
+      transform: rotate(-15deg);
+      pointer-events: none;
+    }
+    .card-category {
+      display: inline-block;
+      background: rgba(255,255,255,.22);
+      color: white;
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .1em;
+      padding: 4px 10px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+    .card-name {
+      font-size: 28px;
+      font-weight: 950;
+      color: white;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      text-shadow: 0 2px 8px rgba(0,0,0,.15);
+    }
+    .card-codes {
+      display: flex;
+      gap: 8px;
+      margin-top: 10px;
+      flex-wrap: wrap;
+    }
+    .chip {
+      background: rgba(255,255,255,.2);
+      color: white;
+      font-size: 11px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+
+    /* Cuerpo de la tarjeta */
+    .card-body { padding: 22px; }
+
+    /* KPIs grandes */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .kpi-box {
+      background: var(--bg);
+      border: 1.5px solid var(--line);
+      border-radius: 16px;
+      padding: 16px 14px 14px;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+      transition: transform .18s;
+    }
+    .kpi-box:hover { transform: translateY(-2px); }
+    .kpi-box.alert-low  { border-color: #fca5a5; background: #fff5f5; }
+    .kpi-box.alert-ok   { border-color: #86efac; background: #f0fdf4; }
+    .kpi-icon {
+      font-size: 20px;
+      margin-bottom: 6px;
+    }
+    .kpi-label {
+      font-size: 10px;
+      font-weight: 900;
+      text-transform: uppercase;
+      letter-spacing: .07em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .kpi-value {
+      font-size: 32px;
+      font-weight: 950;
+      letter-spacing: -2px;
+      line-height: 1;
+      color: var(--text);
+    }
+    .kpi-unit {
+      font-size: 12px;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+
+    /* Filas de detalle */
+    .detail-section {
+      background: #fafaf9;
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      overflow: hidden;
+      margin-bottom: 16px;
+    }
+    .detail-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--line);
+      gap: 12px;
+    }
+    .detail-row:last-child { border-bottom: none; }
+    .detail-label {
+      font-size: 12px;
+      font-weight: 700;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: .04em;
+      flex-shrink: 0;
+    }
+    .detail-value {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text);
+      text-align: right;
+    }
+
+    /* Pill de estado */
+    .pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      font-size: 11px;
+      font-weight: 900;
+    }
+    .pill-success { background: #dcfce7; color: #166534; }
+    .pill-danger  { background: #fee2e2; color: #991b1b; }
+    .pill-warning { background: #fef3c7; color: #92400e; }
+
+    /* Alerta de stock bajo */
+    .stock-alert {
+      background: #fff7ed;
+      border: 1.5px solid #fed7aa;
+      border-radius: 14px;
+      padding: 12px 14px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      color: #92400e;
+      margin-bottom: 16px;
+    }
+    .stock-alert strong { font-weight: 800; }
+
+    /* Descripción */
+    .descripcion-box {
+      background: var(--primary-light);
+      border: 1px solid rgba(217,119,6,.25);
+      border-radius: 14px;
+      padding: 14px;
+      font-size: 13px;
+      color: var(--primary-dark);
+      line-height: 1.6;
+      margin-bottom: 16px;
+    }
+
+    /* Footer de la tarjeta */
+    .card-footer {
+      padding: 14px 22px 20px;
+      border-top: 1px solid var(--line);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .timestamp {
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .refresh-btn {
+      background: var(--primary-light);
+      border: 1.5px solid rgba(217,119,6,.3);
+      color: var(--primary-dark);
+      border-radius: 12px;
+      padding: 8px 14px;
+      font-size: 12px;
+      font-weight: 800;
+      cursor: pointer;
+      transition: background .18s, transform .15s;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .refresh-btn:hover { background: #fde68a; transform: translateY(-1px); }
+
+    /* ── ESTADOS: cargando, error, no encontrado ── */
+    .state-card {
+      width: 100%;
+      max-width: 440px;
+      background: var(--surface);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 48px 28px;
+      text-align: center;
+      animation: cardIn .3s ease both;
+    }
+    .state-icon   { font-size: 56px; margin-bottom: 16px; }
+    .state-title  { font-size: 20px; font-weight: 800; margin-bottom: 8px; letter-spacing: -.3px; }
+    .state-msg    { font-size: 14px; color: var(--muted); line-height: 1.5; max-width: 280px; margin: 0 auto; }
+    .spinner {
+      width: 44px; height: 44px;
+      border: 4px solid var(--line);
+      border-top-color: var(--primary);
+      border-radius: 50%;
+      animation: spin .7s linear infinite;
+      margin: 0 auto 20px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── Pie de página ── */
+    .page-footer {
+      margin-top: 28px;
+      text-align: center;
+      font-size: 11px;
+      color: var(--muted);
+    }
+    .page-footer a { color: var(--primary); text-decoration: none; font-weight: 700; }
+  </style>
+</head>
+<body>
+<div class="page">
+
+  <!-- MARCA -->
+  <header class="brand-header">
+    <div class="brand-logo">🍞</div>
+    <div class="brand-text">
+      <strong>Ramírez ERP</strong>
+      <span>Panificadora &amp; Pastelería</span>
+    </div>
+    <div class="brand-badge">QR</div>
+  </header>
+
+  <!-- BUSCADOR MANUAL (solo cuando no viene ?scan= en la URL) -->
+  <div class="search-card" id="searchCard" style="display:none;">
+    <h2>Buscar producto</h2>
+    <div class="search-row">
+      <input
+        class="search-input"
+        id="searchInput"
+        type="text"
+        placeholder="Ej: CUBANITOS"
+        autocomplete="off"
+        autocapitalize="characters"
+        spellcheck="false"
+        onkeydown="if(event.key==='Enter') buscar()"
+      >
+      <button class="search-btn" onclick="buscar()">Buscar →</button>
+    </div>
+  </div>
+
+  <!-- ÁREA DE RESULTADO -->
+  <div id="resultado"></div>
+
+  <footer class="page-footer">
+    Consulta en tiempo real · Datos desde Google Sheets<br>
+    <a href="#">Panificadora &amp; Pastelería Ramírez</a>
+  </footer>
+
+</div>
+
+<script>
+/* ════════════════════════════════════
+   CONFIGURACIÓN — EDITA SOLO AQUÍ
+════════════════════════════════════ */
+const CONFIG = {
+  // URL pública CSV de tu hoja (obtenida en el Paso 1)
+  CSV_URL: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vTFAiAE_iOIQR1A-9q3qlSpNoTTLvosnp60cWahUH04NA2VnEv_XzvNc2rTCnCqud2gdXdLzJS1fwTr/pub?gid=1446458934&single=true&output=csv',
+  MONEDA:  'Bs'
+};
+
+/* ════════════════════════════════════
+   MAPA DE COLUMNAS (0-indexado)
+   Ajusta si cambias el orden en Sheets
+════════════════════════════════════ */
+const COL = {
+  id_producto:     0,   // A
+  codigo:          1,   // B
+  nombre:          2,   // C  ← parámetro de búsqueda
+  categoria:       3,   // D
+  descripcion:     4,   // E
+  unidad:          5,   // F
+  stock_actual:    6,   // G
+  stock_minimo:    7,   // H
+  precio_unitario: 8,   // I
+  estado:          9    // J
+};
+
+/* ════════════════════════════════════
+   ARRANQUE
+════════════════════════════════════ */
+(function init() {
+  const params = new URLSearchParams(window.location.search);
+  const scan   = (params.get('scan') || '').trim().toUpperCase();
+
+  if (scan) {
+    // Modo QR: busca automáticamente y oculta el buscador
+    document.getElementById('searchCard').style.display = 'none';
+    mostrarCargando('Cargando producto…');
+    fetchProducto(scan);
+  } else {
+    // Modo manual: muestra el buscador
+    document.getElementById('searchCard').style.display = 'block';
+    mostrarVacio();
+  }
+})();
+
+/* ════════════════════════════════════
+   BUSCAR (desde el input manual)
+════════════════════════════════════ */
+function buscar() {
+  const q = document.getElementById('searchInput').value.trim().toUpperCase();
+  if (!q) { alert('Escribe el nombre del producto.'); return; }
+  mostrarCargando('Buscando "' + q + '"…');
+  fetchProducto(q);
+}
+
+/* ════════════════════════════════════
+   FETCH DEL CSV Y PARSEO
+════════════════════════════════════ */
+async function fetchProducto(nombreBuscado) {
+  try {
+    // Cache-bust para siempre tener datos frescos
+    const url  = CONFIG.CSV_URL + '&_cb=' + Date.now();
+    const resp = await fetch(url);
+    if (!resp.ok) throw new Error('HTTP ' + resp.status);
+
+    const texto = await resp.text();
+    const filas = parsearCSV(texto);
+
+    if (filas.length < 2) throw new Error('La hoja está vacía o no se publicó correctamente.');
+
+    // Busca desde la fila 1 (saltando los headers)
+    const fila = filas.slice(1).find(r =>
+      (r[COL.nombre] || '').trim().toUpperCase() === nombreBuscado
+    );
+
+    if (!fila) {
+      mostrarNoEncontrado(nombreBuscado);
+    } else {
+      mostrarProducto(fila, nombreBuscado);
+    }
+
+  } catch (err) {
+    mostrarError(err.message || String(err));
+  }
+}
+
+/* ════════════════════════════════════
+   PARSER CSV ROBUSTO
+   Maneja comas dentro de comillas
+════════════════════════════════════ */
+function parsearCSV(texto) {
+  const filas   = [];
+  const lineas  = texto.split(/\r?\n/);
+
+  for (const linea of lineas) {
+    if (!linea.trim()) continue;
+    const cols  = [];
+    let   cur   = '';
+    let   enQ   = false;
+
+    for (let i = 0; i < linea.length; i++) {
+      const c = linea[i];
+      if (c === '"') {
+        if (enQ && linea[i+1] === '"') { cur += '"'; i++; }
+        else                            enQ = !enQ;
+      } else if (c === ',' && !enQ) {
+        cols.push(cur.trim()); cur = '';
+      } else {
+        cur += c;
+      }
+    }
+    cols.push(cur.trim());
+    filas.push(cols);
+  }
+  return filas;
+}
+
+/* ════════════════════════════════════
+   RENDER: PRODUCTO ENCONTRADO
+════════════════════════════════════ */
+function mostrarProducto(fila, query) {
+  const get = idx => (fila[idx] || '').trim();
+
+  const nombre    = get(COL.nombre);
+  const codigo    = get(COL.codigo);
+  const idProd    = get(COL.id_producto);
+  const categoria = get(COL.categoria);
+  const desc      = get(COL.descripcion);
+  const unidad    = get(COL.unidad);
+  const stockAct  = parseFloat(get(COL.stock_actual)) || 0;
+  const stockMin  = parseFloat(get(COL.stock_minimo)) || 0;
+  const precio    = parseFloat(get(COL.precio_unitario)) || 0;
+  const estado    = get(COL.estado).toUpperCase();
+
+  const stockBajo = stockAct <= stockMin;
+  const estadoHTML = estado === 'ACTIVO'
+    ? `<span class="pill pill-success">✓ ACTIVO</span>`
+    : `<span class="pill pill-danger">✗ ${esc(estado)}</span>`;
+
+  const alertaHTML = stockBajo ? `
+    <div class="stock-alert">
+      ⚠️ <div><strong>Stock bajo.</strong> Hay ${stockAct} ${unidad}. El mínimo es ${stockMin}.</div>
+    </div>` : '';
+
+  const descHTML = desc ? `
+    <div class="descripcion-box">📝 ${esc(desc)}</div>` : '';
+
+  document.getElementById('resultado').innerHTML = `
+    <div class="product-card">
+
+      <!-- Cabecera con degradado -->
+      <div class="card-top">
+        ${categoria ? `<div class="card-category">${esc(categoria)}</div>` : ''}
+        <div class="card-name">${esc(nombre)}</div>
+        <div class="card-codes">
+          ${idProd  ? `<span class="chip">ID: ${esc(idProd)}</span>`  : ''}
+          ${codigo  ? `<span class="chip">Cód: ${esc(codigo)}</span>` : ''}
+        </div>
+      </div>
+
+      <!-- Cuerpo -->
+      <div class="card-body">
+
+        ${alertaHTML}
+
+        <!-- KPIs de stock y precio -->
+        <div class="kpi-grid">
+          <div class="kpi-box ${stockBajo ? 'alert-low' : 'alert-ok'}">
+            <div class="kpi-icon">${stockBajo ? '⚠️' : '📦'}</div>
+            <div class="kpi-label">Stock Actual</div>
+            <div class="kpi-value" style="color:${stockBajo ? '#dc2626' : '#16a34a'};">${stockAct}</div>
+            <div class="kpi-unit">${esc(unidad)}</div>
+          </div>
+          <div class="kpi-box">
+            <div class="kpi-icon">💰</div>
+            <div class="kpi-label">Precio Unitario</div>
+            <div class="kpi-value">${precio.toFixed(2)}</div>
+            <div class="kpi-unit">${CONFIG.MONEDA} / ${esc(unidad)}</div>
+          </div>
+        </div>
+
+        ${descHTML}
+
+        <!-- Detalle extra -->
+        <div class="detail-section">
+          <div class="detail-row">
+            <span class="detail-label">Estado</span>
+            <span class="detail-value">${estadoHTML}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Stock mínimo</span>
+            <span class="detail-value">${stockMin} ${esc(unidad)}</span>
+          </div>
+          <div class="detail-row">
+            <span class="detail-label">Unidad de medida</span>
+            <span class="detail-value">${esc(unidad) || '—'}</span>
+          </div>
+          ${categoria ? `
+          <div class="detail-row">
+            <span class="detail-label">Categoría</span>
+            <span class="detail-value">${esc(categoria)}</span>
+          </div>` : ''}
+        </div>
+
+      </div><!-- /card-body -->
+
+      <!-- Footer -->
+      <div class="card-footer">
+        <div class="timestamp">🕐 Actualizado: ${new Date().toLocaleTimeString('es-BO', {hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div>
+        <button class="refresh-btn" onclick="recargar('${esc(query)}')">
+          ↻ Actualizar
+        </button>
+      </div>
+
+    </div>
+  `;
+}
+
+/* ════════════════════════════════════
+   RENDER: ESTADOS INFORMATIVOS
+════════════════════════════════════ */
+function mostrarCargando(msg) {
+  document.getElementById('resultado').innerHTML = `
+    <div class="state-card">
+      <div class="spinner"></div>
+      <div class="state-title">Un momento…</div>
+      <div class="state-msg">${esc(msg)}</div>
+    </div>`;
+}
+
+function mostrarNoEncontrado(query) {
+  document.getElementById('resultado').innerHTML = `
+    <div class="state-card">
+      <div class="state-icon">🔍</div>
+      <div class="state-title">Producto no encontrado</div>
+      <div class="state-msg">No hay ningún producto llamado <strong>"${esc(query)}"</strong> en el inventario.<br>Verifica el código QR o el nombre.</div>
+    </div>`;
+}
+
+function mostrarError(detalle) {
+  document.getElementById('resultado').innerHTML = `
+    <div class="state-card">
+      <div class="state-icon">⚠️</div>
+      <div class="state-title">Error de conexión</div>
+      <div class="state-msg">No se pudo leer la hoja de datos.<br><small style="color:#a8a29e;margin-top:8px;display:block;">${esc(detalle)}</small></div>
+    </div>`;
+}
+
+function mostrarVacio() {
+  document.getElementById('resultado').innerHTML = `
+    <div class="state-card">
+      <div class="state-icon">📦</div>
+      <div class="state-title">Consulta tu producto</div>
+      <div class="state-msg">Escanea el código QR del estante o escribe el nombre del producto arriba.</div>
+    </div>`;
+}
+
+/* ════════════════════════════════════
+   HELPERS
+════════════════════════════════════ */
+function recargar(query) {
+  mostrarCargando('Actualizando…');
+  fetchProducto(query.toUpperCase());
+}
+
+function esc(v) {
+  return String(v ?? '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;')
+    .replace(/'/g,'&#039;');
+}
+</script>
+</body>
+</html>
